@@ -1,9 +1,10 @@
 // API Configuration
-const API_BASE_URL = 'http://127.0.0.1:8000/api';
+const API_BASE_URL = window.CONFIG?.API_BASE_URL || 'http://127.0.0.1:8000/api';
 
 class APIClient {
     constructor() {
-        this.token = localStorage.getItem('access_token');
+        this.token = localStorage.getItem(window.CONFIG?.STORAGE_KEYS?.ACCESS_TOKEN || 'access_token');
+        this.baseURL = API_BASE_URL;
     }
 
     // Get headers with authentication
@@ -26,7 +27,9 @@ class APIClient {
             const refreshed = await this.refreshToken();
             if (!refreshed) {
                 this.logout();
-                window.location.href = 'login.html';
+                if (window.location.pathname !== '/login.html') {
+                    window.location.href = 'login.html';
+                }
                 return null;
             }
         }
@@ -36,13 +39,18 @@ class APIClient {
             throw new Error(error.detail || error.message || 'An error occurred');
         }
 
-        return response.json();
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+            return response.json();
+        }
+        
+        return response.text();
     }
 
     // Authentication methods
     async login(username, password) {
         try {
-            const response = await fetch(`${API_BASE_URL}/token/`, {
+            const response = await fetch(`${this.baseURL}${window.CONFIG?.ENDPOINTS?.LOGIN || '/token/'}`, {
                 method: 'POST',
                 headers: this.getHeaders(false),
                 body: JSON.stringify({ username, password })
@@ -50,8 +58,11 @@ class APIClient {
 
             const data = await this.handleResponse(response);
             if (data) {
-                localStorage.setItem('access_token', data.access);
-                localStorage.setItem('refresh_token', data.refresh);
+                const accessKey = window.CONFIG?.STORAGE_KEYS?.ACCESS_TOKEN || 'access_token';
+                const refreshKey = window.CONFIG?.STORAGE_KEYS?.REFRESH_TOKEN || 'refresh_token';
+                
+                localStorage.setItem(accessKey, data.access);
+                localStorage.setItem(refreshKey, data.refresh);
                 this.token = data.access;
                 return data;
             }
@@ -64,12 +75,12 @@ class APIClient {
         try {
             const formData = new FormData();
             Object.keys(userData).forEach(key => {
-                if (userData[key] !== null && userData[key] !== undefined) {
+                if (userData[key] !== null && userData[key] !== undefined && userData[key] !== '') {
                     formData.append(key, userData[key]);
                 }
             });
 
-            const response = await fetch(`${API_BASE_URL}/register/`, {
+            const response = await fetch(`${this.baseURL}${window.CONFIG?.ENDPOINTS?.REGISTER || '/register/'}`, {
                 method: 'POST',
                 body: formData
             });
@@ -82,10 +93,11 @@ class APIClient {
 
     async refreshToken() {
         try {
-            const refreshToken = localStorage.getItem('refresh_token');
+            const refreshKey = window.CONFIG?.STORAGE_KEYS?.REFRESH_TOKEN || 'refresh_token';
+            const refreshToken = localStorage.getItem(refreshKey);
             if (!refreshToken) return false;
 
-            const response = await fetch(`${API_BASE_URL}/token/refresh/`, {
+            const response = await fetch(`${this.baseURL}${window.CONFIG?.ENDPOINTS?.REFRESH_TOKEN || '/token/refresh/'}`, {
                 method: 'POST',
                 headers: this.getHeaders(false),
                 body: JSON.stringify({ refresh: refreshToken })
@@ -93,19 +105,26 @@ class APIClient {
 
             if (response.ok) {
                 const data = await response.json();
-                localStorage.setItem('access_token', data.access);
+                const accessKey = window.CONFIG?.STORAGE_KEYS?.ACCESS_TOKEN || 'access_token';
+                localStorage.setItem(accessKey, data.access);
                 this.token = data.access;
                 return true;
             }
             return false;
         } catch (error) {
+            console.error('Token refresh failed:', error);
             return false;
         }
     }
 
     logout() {
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
+        const accessKey = window.CONFIG?.STORAGE_KEYS?.ACCESS_TOKEN || 'access_token';
+        const refreshKey = window.CONFIG?.STORAGE_KEYS?.REFRESH_TOKEN || 'refresh_token';
+        const userKey = window.CONFIG?.STORAGE_KEYS?.USER_DATA || 'user_data';
+        
+        localStorage.removeItem(accessKey);
+        localStorage.removeItem(refreshKey);
+        localStorage.removeItem(userKey);
         this.token = null;
     }
 
@@ -116,7 +135,7 @@ class APIClient {
     // Blog methods
     async getBlogs(search = '', page = 1) {
         try {
-            let url = `${API_BASE_URL}/blogs/?page=${page}`;
+            let url = `${this.baseURL}${window.CONFIG?.ENDPOINTS?.BLOGS || '/blogs/'}?page=${page}`;
             if (search) {
                 url += `&search=${encodeURIComponent(search)}`;
             }
@@ -133,7 +152,7 @@ class APIClient {
 
     async getBlog(id) {
         try {
-            const response = await fetch(`${API_BASE_URL}/blogs/${id}/`, {
+            const response = await fetch(`${this.baseURL}${window.CONFIG?.ENDPOINTS?.BLOGS || '/blogs/'}${id}/`, {
                 headers: this.getHeaders()
             });
 
@@ -145,7 +164,7 @@ class APIClient {
 
     async createBlog(blogData) {
         try {
-            const response = await fetch(`${API_BASE_URL}/blogs/`, {
+            const response = await fetch(`${this.baseURL}${window.CONFIG?.ENDPOINTS?.BLOGS || '/blogs/'}`, {
                 method: 'POST',
                 headers: this.getHeaders(),
                 body: JSON.stringify(blogData)
@@ -159,7 +178,7 @@ class APIClient {
 
     async updateBlog(id, blogData) {
         try {
-            const response = await fetch(`${API_BASE_URL}/blogs/${id}/`, {
+            const response = await fetch(`${this.baseURL}${window.CONFIG?.ENDPOINTS?.BLOGS || '/blogs/'}${id}/`, {
                 method: 'PUT',
                 headers: this.getHeaders(),
                 body: JSON.stringify(blogData)
@@ -173,7 +192,7 @@ class APIClient {
 
     async deleteBlog(id) {
         try {
-            const response = await fetch(`${API_BASE_URL}/blogs/${id}/`, {
+            const response = await fetch(`${this.baseURL}${window.CONFIG?.ENDPOINTS?.BLOGS || '/blogs/'}${id}/`, {
                 method: 'DELETE',
                 headers: this.getHeaders()
             });
@@ -190,7 +209,7 @@ class APIClient {
     // Comment methods
     async getComments(blogId = null, page = 1) {
         try {
-            let url = `${API_BASE_URL}/comments/?page=${page}`;
+            let url = `${this.baseURL}${window.CONFIG?.ENDPOINTS?.COMMENTS || '/comments/'}?page=${page}`;
             if (blogId) {
                 url += `&blog=${blogId}`;
             }
@@ -207,7 +226,7 @@ class APIClient {
 
     async createComment(commentData) {
         try {
-            const response = await fetch(`${API_BASE_URL}/comments/`, {
+            const response = await fetch(`${this.baseURL}${window.CONFIG?.ENDPOINTS?.COMMENTS || '/comments/'}`, {
                 method: 'POST',
                 headers: this.getHeaders(),
                 body: JSON.stringify(commentData)
@@ -221,7 +240,7 @@ class APIClient {
 
     async deleteComment(id) {
         try {
-            const response = await fetch(`${API_BASE_URL}/comments/${id}/`, {
+            const response = await fetch(`${this.baseURL}${window.CONFIG?.ENDPOINTS?.COMMENTS || '/comments/'}${id}/`, {
                 method: 'DELETE',
                 headers: this.getHeaders()
             });
@@ -238,7 +257,7 @@ class APIClient {
     // Follow methods
     async followUser(userId) {
         try {
-            const response = await fetch(`${API_BASE_URL}/followpage`, {
+            const response = await fetch(`${this.baseURL}${window.CONFIG?.ENDPOINTS?.FOLLOW || '/followpage'}`, {
                 method: 'POST',
                 headers: this.getHeaders(),
                 body: JSON.stringify({ following: userId })
@@ -252,7 +271,7 @@ class APIClient {
 
     async unfollowUser(userId) {
         try {
-            const response = await fetch(`${API_BASE_URL}/unfollowpage`, {
+            const response = await fetch(`${this.baseURL}${window.CONFIG?.ENDPOINTS?.UNFOLLOW || '/unfollowpage'}`, {
                 method: 'DELETE',
                 headers: this.getHeaders(),
                 body: JSON.stringify({ user_id: userId })
