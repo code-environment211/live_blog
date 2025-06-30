@@ -9,4 +9,17 @@
     <h1>HOMEPAGE</h1>
     
 </body>
+<script>
+    const socket = new WebSocket('ws://' + window.location.host + '/ws/blog-notifications/');
+
+    socket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+        alert(data.message);  // You can show it via toast/notification
+    };
+
+    socket.onclose = function(e) {
+        console.error("WebSocket closed unexpectedly");
+    };
+</script>
+
 </html>
