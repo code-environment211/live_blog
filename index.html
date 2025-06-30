@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Blog - Home</title>
+    <link rel="stylesheet" href="static/css/style.css">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <nav class="nav">
+                <a href="index.html" class="logo">LiveBlog</a>
+                <ul class="nav-links">
+                    <li><a href="index.html">Home</a></li>
+                    <li class="auth-required"><a href="create-blog.html">Create Blog</a></li>
+                    <li class="auth-required"><a href="my-blogs.html">My Blogs</a></li>
+                    <li class="guest-only"><a href="login.html">Login</a></li>
+                    <li class="guest-only"><a href="register.html">Register</a></li>
+                    <li class="auth-required"><a href="#" onclick="AuthManager.logout()">Logout</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="container">
+            <div id="alert-container"></div>
+            
+            <!-- Welcome Section -->
+            <div class="card text-center mb-3">
+                <h1>Welcome to LiveBlog</h1>
+                <p>Discover and share live blogging experiences from around the world</p>
+            </div>
+
+            <!-- Search and Filter Section -->
+            <div class="search-container">
+                <input type="text" id="search-input" class="search-input" placeholder="Search blogs...">
+                <div class="filter-buttons">
+                    <button class="filter-btn active" data-status="">All</button>
+                    <button class="filter-btn" data-status="Ongoing">Ongoing</button>
+                    <button class="filter-btn" data-status="Ended">Ended</button>
+                </div>
+            </div>
+
+            <!-- Blog Posts Container -->
+            <div id="blogs-container">
+                <div class="text-center">
+                    <div class="loading"></div>
+                    <p>Loading blogs...</p>
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            <div id="pagination-container" class="text-center mt-3"></div>
+        </div>
+    </main>
+
+    <script src="static/js/config.js"></script>
+    <script src="static/js/api.js"></script>
+    <script src="static/js/auth.js"></script>
+    <script>
+        let currentPage = 1;
+        let currentSearch = '';
+        let currentStatus = '';
+
+        // Load blogs on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadBlogs();
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            // Search functionality
+            const searchInput = document.getElementById('search-input');
+            let searchTimeout;
+            
+            searchInput.addEventListener('input', function() {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    currentSearch = this.value;
+                    currentPage = 1;
+                    loadBlogs();
+                }, 500);
+            });
+
+            // Filter buttons
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    currentStatus = this.dataset.status;
+                    currentPage = 1;
+                    loadBlogs();
+                });
+            });
+        }
+
+        async function loadBlogs() {
+            try {
+                const container = document.getElementById('blogs-container');
+                container.innerHTML = '<div class="text-center"><div class="loading"></div><p>Loading blogs...</p></div>';
+
+                let searchQuery = currentSearch;
+                if (currentStatus) {
+                    searchQuery += (searchQuery ? ' ' : '') + currentStatus;
+                }
+
+                const data = await api.getBlogs(searchQuery, currentPage);
+                displayBlogs(data.results || []);
+                displayPagination(data);
+            } catch (error) {
+                console.error('Error loading blogs:', error);
+                document.getElementById('blogs-container').innerHTML = 
+                    '<div class="card text-center"><p>Error loading blogs. Please try again.</p></div>';
+            }
+        }
+
+        function displayBlogs(blogs) {
+            const container = document.getElementById('blogs-container');
+            
+            if (blogs.length === 0) {
+                container.innerHTML = '<div class="card text-center"><p>No blogs found.</p></div>';
+                return;
+            }
+
+            container.innerHTML = blogs.map(blog => `
+                <div class="card blog-post">
+                    <div class="blog-header">
+                        <div>
+                            <h2 class="blog-title">${blog.title}</h2>
+                            <div class="blog-meta">
+                                <span>By ${blog.author}</span>
+                                <span>${formatDate(blog.timestamp)}</span>
+                                <span class="status-badge status-${blog.event_status.toLowerCase()}">${blog.event_status}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="blog-content">
+                        ${truncateText(blog.content)}
+                    </div>
+                    <div class="blog-actions">
+                        <a href="blog-detail.html?id=${blog.id}" class="btn btn-primary">Read More</a>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function displayPagination(data) {
+            const container = document.getElementById('pagination-container');
+            
+            if (!data.next && !data.previous) {
+                container.innerHTML = '';
+                return;
+            }
+
+            let paginationHTML = '<div class="flex justify-center gap-2">';
+            
+            if (data.previous) {
+                paginationHTML += `<button class="btn btn-secondary" onclick="changePage(${currentPage - 1})">Previous</button>`;
+            }
+            
+            paginationHTML += `<span class="btn">Page ${currentPage}</span>`;
+            
+            if (data.next) {
+                paginationHTML += `<button class="btn btn-secondary" onclick="changePage(${currentPage + 1})">Next</button>`;
+            }
+            
+            paginationHTML += '</div>';
+            container.innerHTML = paginationHTML;
+        }
+
+        function changePage(page) {
+            currentPage = page;
+            loadBlogs();
+        }
+    </script>
+</body>
+</html>

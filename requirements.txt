@@ -6,3 +6,8 @@ pillow==11.2.1
 PyJWT==2.9.0
 sqlparse==0.5.3
 typing_extensions==4.14.0
+<<<<<<< HEAD
+=======
+python-dotenv==1.0.0
+django-cors-headers==4.3.1
+>>>>>>> 89ec19f65c16efc30df5569ee27ecb48641a9cfc

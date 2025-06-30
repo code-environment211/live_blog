@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Blog - Live Blog</title>
+    <link rel="stylesheet" href="static/css/style.css">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <nav class="nav">
+                <a href="index.html" class="logo">LiveBlog</a>
+                <ul class="nav-links">
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="create-blog.html">Create Blog</a></li>
+                    <li><a href="my-blogs.html">My Blogs</a></li>
+                    <li><a href="#" onclick="AuthManager.logout()">Logout</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="container">
+            <div id="alert-container"></div>
+            
+            <div class="card">
+                <h1>Create New Blog Post</h1>
+                
+                <form id="blog-form">
+                    <div class="form-group">
+                        <label for="title">Title</label>
+                        <input type="text" id="title" name="title" class="form-control" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="content">Content</label>
+                        <textarea id="content" name="content" class="form-control" rows="10" required></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="event_status">Event Status</label>
+                        <select id="event_status" name="event_status" class="form-control" required>
+                            <option value="">Select Status</option>
+                            <option value="Ongoing">Ongoing</option>
+                            <option value="Ended">Ended</option>
+                        </select>
+                    </div>
+                    
+                    <div class="flex gap-2">
+                        <button type="submit" class="btn btn-primary">Create Blog</button>
+                        <a href="index.html" class="btn btn-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <script src="static/js/api.js"></script>
+    <script src="static/js/auth.js"></script>
+    <script>
+        // Check authentication
+        AuthManager.checkAuth();
+
+        document.getElementById('blog-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = this.querySelector('button[type="submit"]');
+            setLoading(submitBtn, true);
+            
+            const formData = new FormData(this);
+            const blogData = {
+                title: formData.get('title'),
+                content: formData.get('content'),
+                event_status: formData.get('event_status')
+            };
+            
+            // Validate form
+            const errors = validateForm(blogData, {
+                title: { required: true, minLength: 3 },
+                content: { required: true, minLength: 10 },
+                event_status: { required: true }
+            });
+            
+            if (Object.keys(errors).length > 0) {
+                displayFormErrors(errors);
+                setLoading(submitBtn, false);
+                return;
+            }
+            
+            try {
+                await api.createBlog(blogData);
+                showAlert('Blog created successfully!', 'success');
+                setTimeout(() => {
+                    window.location.href = 'my-blogs.html';
+                }, 1000);
+            } catch (error) {
+                showAlert(error.message || 'Failed to create blog. Please try again.', 'error');
+                setLoading(submitBtn, false);
+            }
+        });
+    </script>
+</body>
+</html>
