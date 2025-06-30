@@ -12,15 +12,9 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 import os
 from pathlib import Path
-<<<<<<< HEAD
 from datetime import timedelta
 
-=======
-from dotenv import load_dotenv
 
-# Load environment variables from .env file
-load_dotenv()
->>>>>>> 89ec19f65c16efc30df5569ee27ecb48641a9cfc
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -139,8 +133,7 @@ REST_FRAMEWORK = {
 # Custom User Model
 AUTH_USER_MODEL = 'users.CustomUser'
 
-<<<<<<< HEAD
-AUTH_USER_MODEL = 'users.CustomUser'  
+
 
 
 
@@ -149,28 +142,3 @@ SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=30),
 }
-=======
-# CORS settings for frontend
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "http://localhost:8080",
-    "http://127.0.0.1:8080",
-]
-
-CORS_ALLOW_ALL_ORIGINS = DEBUG  # Only allow all origins in development
-
-CORS_ALLOW_CREDENTIALS = True
-
-CORS_ALLOWED_HEADERS = [
-    'accept',
-    'accept-encoding',
-    'authorization',
-    'content-type',
-    'dnt',
-    'origin',
-    'user-agent',
-    'x-csrftoken',
-    'x-requested-with',
-]
->>>>>>> 89ec19f65c16efc30df5569ee27ecb48641a9cfc
