@@ -1,4 +1,4 @@
-from rest_framework import generics
+from rest_framework.viewsets import ModelViewSet
 from .models import CustomUser
 from .serializers import UserRegisterSerializer, FollowSerializer
 from rest_framework.permissions import AllowAny
@@ -8,13 +8,13 @@ from rest_framework.response import Response
 from rest_framework import status
 from .models import Follow
 
-class UserRegisterView(generics.CreateAPIView):
+class UserRegisterView(ModelViewSet):
     queryset = CustomUser.objects.all()
     serializer_class = UserRegisterSerializer
     permission_classes = [AllowAny]
 
 class FollowUserView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    # permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
         serializer = FollowSerializer(data=request.data, context={'request':request})
@@ -24,7 +24,7 @@ class FollowUserView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 class UnfollowUserView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    # permission_classes = [permissions.IsAuthenticated]
 
     def delete(self, request, user_id):
         try:

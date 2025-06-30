@@ -1,11 +1,12 @@
 from rest_framework import viewsets, permissions, filters
 from .models import LiveBlog, Comment
 from .serializers import LiveBlogSerializer, CommentSerializer
+from django.shortcuts import render
 
 class LiveBlogViewSet(viewsets.ModelViewSet):
     queryset = LiveBlog.objects.all().order_by('-timestamp')
     serializer_class = LiveBlogSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    # permission_classes = [permissions.IsAuthenticated]
     filter_backends = [filters.SearchFilter]
     search_fields = ['title', 'content', 'event_status']
 
@@ -16,9 +17,14 @@ class LiveBlogViewSet(viewsets.ModelViewSet):
 class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all().order_by('-created_at')
     serializer_class = CommentSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    # permission_classes = [permissions.IsAuthenticated]
     filter_backends = [filters.SearchFilter]
     search_fields = ['content']
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+# ------------------------------------------------------------------------------------------------------------------------------------------------
+
+# webpage view : 
+def homepage(request):
+    return render(request, 'index.html')
