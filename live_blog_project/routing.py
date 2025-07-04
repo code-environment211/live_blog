@@ -1,5 +1,5 @@
 from django.urls import path
-from .consumers import NotificationConsumer
+from Notifications.consumers import NotificationConsumer
 
 websocket_urlpatterns = [
     path("ws/blog-notifications/", NotificationConsumer.as_asgi()),
