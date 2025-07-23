@@ -38,3 +38,6 @@ def homepage(request):
 ######devanshu
 def nothing(request):
     return 
+
+def nothingnew(request):
+    return 
