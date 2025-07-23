@@ -35,3 +35,6 @@ def homepage(request):
     return render(request, 'index.html')
 
 
+######devanshu
+def nothing(request):
+    return 
